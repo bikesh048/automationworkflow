@@ -47,6 +47,13 @@ jobs:
         working-directory: ./terraform
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: terraform apply -auto-approve tfplan
+      - name: Commit Terraform state
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git add *.tfstate
+          git commit -m "Update Terraform state" || echo "No changes to commit"
+          git push
       - name: Get ECR Repository URL
         run: |
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
