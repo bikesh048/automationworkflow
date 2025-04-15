@@ -76,7 +76,8 @@ jobs:
 
       - name: Get ECR Repository URL
         run: |
-          ECR_REPOSITORY_URL=$(terraform output -raw ecr_repository_url)
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          ECR_REPOSITORY_URL="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}"
           echo "ECR_REPOSITORY_URL=$ECR_REPOSITORY_URL" >> $GITHUB_ENV
 
       - name: Build, tag, and push Docker image to Amazon ECR
