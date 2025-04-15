@@ -455,6 +455,11 @@ resource "aws_codebuild_project" "deploy_project" {
       name  = "SERVICE_NAME"
       value = aws_ecs_service.app_service.name
     }
+
+    environment_variable {
+      name  = "AWS_DEFAULT_REGION"
+      value = var.aws_region
+    }
   }
 
   source {
