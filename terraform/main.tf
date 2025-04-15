@@ -245,6 +245,56 @@ resource "aws_iam_role" "codepipeline_role" {
     ]
   })
 }
+# EventBridge rule to detect ECR image push events
+resource "aws_cloudwatch_event_rule" "ecr_image_push" {
+  name        = "${var.app_name}-ecr-image-push"
+  description = "Detect ECR image push events and trigger CodePipeline"
+
+  event_pattern = jsonencode({
+    source      = ["aws.ecr"],
+    detail-type = ["ECR Image Action"],
+    detail      = {
+      action-type     = ["PUSH"],
+      repository-name = [aws_ecr_repository.app_repo.name],
+      image-tag       = ["latest"]
+    }
+  })
+}
+# IAM role for EventBridge to start CodePipeline execution
+resource "aws_iam_role" "eventbridge_role" {
+  name = "${var.app_name}-eventbridge-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Principal = {
+        Service = "events.amazonaws.com"
+      },
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+# IAM policy to allow EventBridge to start CodePipeline
+resource "aws_iam_role_policy" "eventbridge_policy" {
+  name = "${var.app_name}-eventbridge-policy"
+  role = aws_iam_role.eventbridge_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect   = "Allow",
+      Action   = "codepipeline:StartPipelineExecution",
+      Resource = aws_codepipeline.app_pipeline.arn
+    }]
+  })
+}
+# EventBridge target to start the CodePipeline
+resource "aws_cloudwatch_event_target" "codepipeline_target" {
+  rule     = aws_cloudwatch_event_rule.ecr_image_push.name
+  arn      = aws_codepipeline.app_pipeline.arn
+  role_arn = aws_iam_role.eventbridge_role.arn
+}
 
 resource "aws_iam_role_policy" "codepipeline_policy" {
   name = "${var.app_name}-codepipeline-policy"
@@ -292,6 +342,18 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
           "ecr:DescribeImages"
         ],
         Resource = aws_ecr_repository.app_repo.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:DescribeImages",
+          "ecr:GetDownloadUrlForLayer"
+        ]
+        Resource = "*"
       }
     ]
   })
@@ -453,8 +515,15 @@ resource "aws_codepipeline" "app_pipeline" {
       input_artifacts = ["source_output"]
       version         = "1"
 
-      configuration = {
+       configuration = {
         ProjectName = aws_codebuild_project.deploy_project.name
+        EnvironmentVariables = jsonencode([
+          {
+            name  = "AWS_ACCOUNT_ID",
+            value = "#{codepipeline.PipelineExecutionId}",
+            type  = "PLAINTEXT"
+          }
+        ])
       }
     }
   }
