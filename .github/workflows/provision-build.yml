@@ -47,15 +47,11 @@ jobs:
         working-directory: ./terraform
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: terraform apply -auto-approve tfplan
-
-      # - name: Get ECR Repository URL
-      #   working-directory: ./terraform
-      #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      #   id: get-ecr-url
-      #   run: |
-      #     ECR_REPOSITORY_URL=$(terraform output -raw ecr_repository_url)
-      #     echo "ECR_REPOSITORY_URL=$ECR_REPOSITORY_URL" >> $GITHUB_ENV
-      #     echo "ecr_repository_url=$ECR_REPOSITORY_URL" >> $GITHUB_OUTPUT
+      - name: Get ECR Repository URL
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          ECR_REPOSITORY_URL="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}"
+          echo "ECR_REPOSITORY_URL=$ECR_REPOSITORY_URL" >> $GITHUB_ENV
 
   build-and-push:
     name: Build and Push Docker Image
