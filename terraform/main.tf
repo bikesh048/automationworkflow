@@ -460,6 +460,11 @@ resource "aws_codebuild_project" "deploy_project" {
       name  = "AWS_DEFAULT_REGION"
       value = var.aws_region
     }
+
+    environment_variable {
+      name  = "AWS_ACCOUNT_ID"
+      value = var.account_id
+    }
   }
 
   source {

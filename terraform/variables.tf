@@ -40,3 +40,9 @@ variable "app_count" {
   type        = number
   default     = 1
 }
+
+variable "account_id" {
+  description = "The AWS account ID"
+  type = string
+  default = "780147879176"
+}
