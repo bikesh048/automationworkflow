@@ -530,8 +530,13 @@ resource "aws_codepipeline" "app_pipeline" {
         EnvironmentVariables = jsonencode([
           {
             name  = "AWS_ACCOUNT_ID",
-            value = "#{codepipeline.PipelineExecutionId}",
+            value = var.account_id,
             type  = "PLAINTEXT"
+          }, 
+          {
+            name = "AWS_DEFAULT_REGION",
+            value = var.aws_region,
+            type = "PLAINTEXT"
           }
         ])
       }
