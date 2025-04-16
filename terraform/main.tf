@@ -663,3 +663,8 @@ output "codepipeline_name" {
   value       = aws_codepipeline.app_pipeline.name
 }
 
+output "alb" {
+  description = "Endpoint for alb."
+  value = aws_lb.app.dns_name
+}
+
