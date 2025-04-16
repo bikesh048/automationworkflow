@@ -1,0 +1,11 @@
+aws_region="us-east-1"
+app_name="nestjs-app"
+environment="dev"
+container_port=3000
+task_cpu="256"
+task_memory="512"
+app_count=1
+api_endpoint="api.bikeshrestha.com.np"
+account_id="780147879176"
+certificate_id="88681fba-8391-4166-b43c-933e531f9929"
+zone_id="Z03506322PP83CHNEIIOA"
