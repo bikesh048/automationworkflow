@@ -12,60 +12,60 @@ env:
   ECR_REPOSITORY: nestjs-app
 
 jobs:
-  terraform:
-    name: Terraform
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
+  # terraform:
+  #   name: Terraform
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: write
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v2
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: ${{ env.AWS_REGION }}
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.11.4
+  #     - name: Setup Terraform
+  #       uses: hashicorp/setup-terraform@v2
+  #       with:
+  #         terraform_version: 1.11.4
 
-      - name: Terraform Init
-        working-directory: ./terraform
-        run: terraform init
+  #     - name: Terraform Init
+  #       working-directory: ./terraform
+  #       run: terraform init
 
-      - name: Terraform Validate
-        working-directory: ./terraform
-        run: terraform validate
+  #     - name: Terraform Validate
+  #       working-directory: ./terraform
+  #       run: terraform validate
 
-      - name: Terraform Plan
-        working-directory: ./terraform
-        run: terraform plan -out=tfplan
+  #     - name: Terraform Plan
+  #       working-directory: ./terraform
+  #       run: terraform plan -out=tfplan
 
-      - name: Terraform Apply
-        working-directory: ./terraform
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: terraform apply -auto-approve tfplan
-      - name: Commit Terraform state
-        run: |
-          git config --global user.name 'GitHub Actions'
-          git config --global user.email 'actions@github.com'
-          git add *.tfstate
-          git commit -m "Update Terraform state" || echo "No changes to commit"
-          git push
-      - name: Get ECR Repository URL
-        run: |
-          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          ECR_REPOSITORY_URL="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}"
-          echo "ECR_REPOSITORY_URL=$ECR_REPOSITORY_URL" >> $GITHUB_ENV
+  #     - name: Terraform Apply
+  #       working-directory: ./terraform
+  #       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  #       run: terraform apply -auto-approve tfplan
+  #     - name: Commit Terraform state
+  #       run: |
+  #         git config --global user.name 'GitHub Actions'
+  #         git config --global user.email 'actions@github.com'
+  #         git add *.tfstate
+  #         git commit -m "Update Terraform state" || echo "No changes to commit"
+  #         git push
+  #     - name: Get ECR Repository URL
+  #       run: |
+  #         ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+  #         ECR_REPOSITORY_URL="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}"
+  #         echo "ECR_REPOSITORY_URL=$ECR_REPOSITORY_URL" >> $GITHUB_ENV
 
   build-and-push:
     name: Build and Push Docker Image
-    needs: terraform
+    # needs: terraform
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
