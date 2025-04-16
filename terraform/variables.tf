@@ -46,3 +46,9 @@ variable "account_id" {
   type = string
   default = "780147879176"
 }
+
+variable "acm_certificate_arn" {
+  description = "The certificate for bikeshrestha.com.np"
+  type = string
+  default = "arn:aws:acm:us-east-1:780147879176:certificate/88681fba-8391-4166-b43c-933e531f9929"
+}
