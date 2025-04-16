@@ -211,14 +211,6 @@ resource "aws_ecs_service" "app_service" {
     Environment = var.environment
   }
 }
-# Application Load Balancer
-resource "aws_lb" "app" {
-  name               = "${var.app_name}-alb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb.id]
-  subnets            = [aws_default_subnet.default_az1.id, aws_default_subnet.default_az2.id]
-}
 
 # ALB Security Group
 resource "aws_security_group" "alb" {
@@ -271,13 +263,51 @@ locals {
   acm_certificate_arn = "arn:aws:acm:${var.aws_region}:${var.account_id}:certificate/${var.certificate_id}"
 }
 
+resource "tls_private_key" "example" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "tls_self_signed_cert" "example" {
+  private_key_pem = tls_private_key.example.private_key_pem
+
+  subject {
+    common_name  = "rise.com"
+    organization = "Rise, Amber"
+  }
+
+  validity_period_hours = 8760  # 1 year
+
+  allowed_uses = [
+    "key_encipherment",
+    "digital_signature",
+    "server_auth",
+  ]
+}
+
+
+# Upload the self-signed cert to AWS ACM
+resource "aws_acm_certificate" "example" {
+  private_key      = tls_private_key.example.private_key_pem
+  certificate_body = tls_self_signed_cert.example.cert_pem
+}
+
+# Application Load Balancer
+resource "aws_lb" "app" {
+  name               = "${var.app_name}-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb.id]
+  subnets            = [aws_default_subnet.default_az1.id, aws_default_subnet.default_az2.id]
+}
+
 # HTTPS Listener
 resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.app.arn
   port              = 443
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-2016-08"
-  certificate_arn   = local.acm_certificate_arn  
+  certificate_arn   =  aws_acm_certificate.example.arn #local.acm_certificate_arn  
 
   default_action {
     type             = "forward"
